@@ -1,4 +1,3 @@
-# exploratory-data-analysis-on-netfilx-streaming-trends
 # Netflix Content Analysis: An EDA-Based Approach Using Python, Pandas and Matplotlib
 
 Exploratory data analysis on Netflix's content catalog to uncover patterns in what Netflix has added over time — genres, countries, ratings, and content types — using an EDA/CRISP-DM style workflow.
