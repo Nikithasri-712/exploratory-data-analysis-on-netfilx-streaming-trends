@@ -1,34 +1,45 @@
 import pandas as pd
 import numpy as np
+import pytest
 
-# ✅ Load Netflix dataset
-df = pd.read_csv(r"C:\Projects\exploratary_data_analysis_netfilx\netflix_titles.csv")
+@pytest.fixture
+def sample_df():
+    return pd.DataFrame({
+        "show_id": ["s1", "s2", "s3", "s4"],
+        "title": ["Movie A", "Movie B", "Show C", "Show D"],
+        "type": ["Movie", "Movie", "TV Show", "TV Show"],
+        "duration": ["90 min", "120 min", "2 Seasons", "1 Season"],
+        "release_year": [2020, 2021, 2019, 2018],
+        "listed_in": ["Drama, Action", "Comedy", "Documentary", "Thriller"]
+    })
 
-# ✅ Quick checks
-print("Shape:", df.shape)
-print("Columns:", df.columns.tolist())
-print(df.head(3))
+def test_dataframe_not_empty(sample_df):
+    assert not sample_df.empty
 
-# ✅ Basic cleaning
-df['director'] = df['director'].fillna('Unknown')
-df['cast'] = df['cast'].fillna('Unknown')
-df['country'] = df['country'].fillna('Unknown')
-df['date_added'] = df['date_added'].fillna('Unknown')
-df['rating'] = df['rating'].fillna('Not Rated')
-df['duration'] = df['duration'].fillna('Unknown')
+def test_unique_show_ids(sample_df):
+    assert sample_df["show_id"].is_unique
 
-# ✅ Normalize ratings
-valid_ratings = [
-    'TV-MA','TV-14','TV-PG','R','PG-13','TV-Y7','TV-Y',
-    'PG','TV-G','NR','G','TV-Y7-FV','Not Rated','NC-17','UR'
-]
-df = df[df['rating'].isin(valid_ratings)]
-df['rating'] = df['rating'].replace({'Not Rated': 'NR', 'UR': 'NR'})
+def test_type_values(sample_df):
+    assert set(sample_df["type"].unique()) == {"Movie", "TV Show"}
 
-# ✅ Add decade column
-df['decade'] = (df['release_year'] // 10) * 10
+def test_movie_duration_numeric(sample_df):
+    df_movies = sample_df[sample_df["type"] == "Movie"].copy()
+    df_movies["duration_minutes"] = pd.to_numeric(
+        df_movies["duration"].str.replace(" min", ""), errors="coerce"
+    )
+    assert df_movies["duration_minutes"].notnull().all()
 
-# ✅ Save cleaned dataset for Power BI
-df.to_csv("netflix_clean.csv", index=False)
+def test_tvshow_seasons_numeric(sample_df):
+    df_shows = sample_df[sample_df["type"] == "TV Show"].copy()
+    df_shows["seasons"] = pd.to_numeric(
+        df_shows["duration"].str.replace(" Seasons", "").str.replace(" Season", ""),
+        errors="coerce"
+    )
+    assert df_shows["seasons"].notnull().all()
 
-print("Cleaned dataset saved as netflix_clean.csv")
+def test_release_year_range(sample_df):
+    assert sample_df["release_year"].between(1900, 2026).all()
+
+def test_genre_extraction(sample_df):
+    sample_df["genre"] = sample_df["listed_in"].str.split(",").str[0].str.strip()
+    assert sample_df["genre"].notnull().all()
